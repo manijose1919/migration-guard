@@ -1,0 +1,4 @@
+# Normalize line endings: keep LF in the repo, let Git handle checkout.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
