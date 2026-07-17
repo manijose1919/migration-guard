@@ -1,0 +1,12 @@
+# MigrationGuard project policy.
+# Copy to .migrationguard.toml at your repo root; the CLI auto-discovers it by
+# walking up from the analyzed path. Precedence: file < env vars < CLI flags.
+
+# Severity that fails the CI gate: INFO | LOW | MEDIUM | HIGH | CRITICAL
+fail_on = "HIGH"
+
+# High-traffic tables. Locking operations on these escalate one severity level.
+large_tables = ["users", "orders", "events"]
+
+# Rule IDs to disable project-wide (see `migration-guard rules`).
+disabled_rules = []

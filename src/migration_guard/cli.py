@@ -13,7 +13,7 @@ import sys
 from collections.abc import Sequence
 
 from .analyzer import Analyzer
-from .config import Config
+from .config import resolve_config
 from .models import Severity
 from .reporting import render
 from .rules import rule_catalog
@@ -50,21 +50,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--disable", type=_csv, default=None,
         help="Comma-separated rule IDs to skip (e.g. MG001,MG003).",
     )
+    analyze.add_argument(
+        "--config", default=None,
+        help="Path to a .migrationguard.toml (default: auto-discover upward).",
+    )
 
     sub.add_parser("rules", help="List the available safety rules.")
     return parser
 
 
-def _config_from_args(args: argparse.Namespace) -> Config:
-    """Start from environment policy, then apply any explicit CLI overrides."""
-    cfg = Config.from_env()
-    if args.fail_on is not None:
-        cfg.fail_on = Severity.coerce(args.fail_on)
-    if args.large_tables is not None:
-        cfg.large_tables = {t.lower() for t in args.large_tables}
-    if args.disable is not None:
-        cfg.disabled_rules = args.disable
-    return cfg
+def _config_from_args(args: argparse.Namespace):
+    """Layer config sources: file -> env -> CLI flags (highest wins)."""
+    overrides = {
+        "fail_on": Severity.coerce(args.fail_on) if args.fail_on else None,
+        "large_tables": args.large_tables,
+        "disabled_rules": args.disable,
+    }
+    return resolve_config(config_path=args.config, overrides=overrides)
 
 
 def _run_analyze(args: argparse.Namespace) -> int:

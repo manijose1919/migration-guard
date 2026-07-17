@@ -136,6 +136,19 @@ every surface (CLI/API/CI) picks it up automatically — no core changes.
 
 ---
 
+## Project configuration
+
+Drop a `.migrationguard.toml` at your repo root (auto-discovered by walking up
+from the scanned path). Precedence is **file < env vars < CLI flags**, so CI can
+override the committed policy when needed. See
+[`.migrationguard.example.toml`](.migrationguard.example.toml):
+
+```toml
+fail_on = "HIGH"
+large_tables = ["users", "orders"]
+disabled_rules = ["MG010"]
+```
+
 ## Suppressing known-safe findings
 
 Grandfather intentional exceptions with inline comments (a directive with no rule
