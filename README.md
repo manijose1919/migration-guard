@@ -136,6 +136,20 @@ every surface (CLI/API/CI) picks it up automatically — no core changes.
 
 ---
 
+## Suppressing known-safe findings
+
+Grandfather intentional exceptions with inline comments (a directive with no rule
+IDs suppresses all rules at its scope):
+
+```sql
+ALTER TABLE users ADD COLUMN a int NOT NULL;  -- migrationguard:disable-line MG001
+
+-- migrationguard:disable-next-line MG002
+CREATE INDEX idx ON users (email);
+
+-- migrationguard:disable-file MG003   (whole file)
+```
+
 ## Architecture
 
 ```

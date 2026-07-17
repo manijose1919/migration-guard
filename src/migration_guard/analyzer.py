@@ -12,6 +12,7 @@ from .config import Config
 from .models import AnalysisResult, Finding
 from .parser import parse_sql
 from .rules import Rule, default_rules
+from .suppressions import parse_directives
 
 
 class Analyzer:
@@ -24,10 +25,13 @@ class Analyzer:
         self.rules = [r for r in all_rules if r.id not in self.config.disabled_rules]
 
     def analyze_sql(self, sql: str, filename: str | None = None) -> AnalysisResult:
+        suppressions = parse_directives(sql)
         findings: list[Finding] = []
         for stmt in parse_sql(sql):
             for rule in self.rules:
                 for finding in rule.check(stmt, self.config):
+                    if suppressions.is_suppressed(finding.rule_id, finding.line):
+                        continue
                     finding.filename = filename
                     findings.append(finding)
         # Most severe first, then by source order.
