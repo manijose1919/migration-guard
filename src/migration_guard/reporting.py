@@ -70,10 +70,45 @@ def render_sarif(results: Iterable[AnalysisResult]) -> str:
     return json.dumps(doc, indent=2)
 
 
+# GitHub workflow-command annotation level per severity.
+_GH_LEVEL = {
+    Severity.INFO: "notice",
+    Severity.LOW: "notice",
+    Severity.MEDIUM: "warning",
+    Severity.HIGH: "error",
+    Severity.CRITICAL: "error",
+}
+
+
+def _gh_escape_data(text: str) -> str:
+    # Workflow-command message data must not contain raw newlines/percent.
+    return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def _gh_escape_prop(text: str) -> str:
+    return _gh_escape_data(text).replace(":", "%3A").replace(",", "%2C")
+
+
+def render_github(results: Iterable[AnalysisResult]) -> str:
+    """Emit ::error / ::warning / ::notice workflow commands for PR annotations."""
+    lines = []
+    for r in results:
+        for f in r.findings:
+            level = _GH_LEVEL[f.severity]
+            file = _gh_escape_prop(f.filename or "<sql>")
+            title = _gh_escape_prop(f.rule_id)
+            body = _gh_escape_data(f"[{f.severity.value}] {f.message} {f.suggestion}")
+            lines.append(
+                f"::{level} file={file},line={f.line},title={title}::{body}"
+            )
+    return "\n".join(lines)
+
+
 _RENDERERS = {
     "text": render_text,
     "json": render_json,
     "sarif": render_sarif,
+    "github": render_github,
 }
 
 

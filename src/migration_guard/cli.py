@@ -35,8 +35,8 @@ def build_parser() -> argparse.ArgumentParser:
     analyze = sub.add_parser("analyze", help="Analyze SQL migration file(s) or directory.")
     analyze.add_argument("paths", nargs="+", help="SQL files or directories to scan.")
     analyze.add_argument(
-        "-f", "--format", choices=["text", "json", "sarif"], default="text",
-        help="Output format (default: text).",
+        "-f", "--format", choices=["text", "json", "sarif", "github"], default="text",
+        help="Output format (default: text). 'github' emits PR annotations.",
     )
     analyze.add_argument(
         "--fail-on", choices=_SEVERITY_CHOICES, default=None,

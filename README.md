@@ -96,10 +96,20 @@ if result.gate_failed("HIGH"):        # safe on clean input (never raises)
 returns structured JSON findings. Deploy the provided `Dockerfile` behind any gateway;
 call it from a deploy pipeline, a bot, or a code-review service.
 
-**3. As a CI gate (GitHub Actions)** — the included `.github/workflows/main.yml`
-demonstrates running the analyzer on changed migrations and failing the build. Because
-output is also available as **SARIF**, findings surface directly in the GitHub
-"Security" / PR "Files changed" tabs.
+**3. As a GitHub Action** — drop this into any workflow; findings appear as inline
+annotations on the PR diff and the build fails past your threshold:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: manijose1919/migration-guard@main
+  with:
+    paths: db/migrations
+    fail-on: HIGH
+    large-tables: users,orders   # optional: escalate locks on hot tables
+```
+
+The `--format github` output emits `::error`/`::warning` workflow commands, and a
+**SARIF** format is available for the GitHub "Security" tab / code scanning.
 
 **4. As a pre-commit / pre-deploy hook** — the CLI exit code is the contract: `0` = pass,
 non-zero = a finding met the `--fail-on` threshold.

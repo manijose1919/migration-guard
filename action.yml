@@ -1,0 +1,48 @@
+name: "MigrationGuard"
+description: "Static safety analyzer for SQL database migrations — fail the build on unsafe schema changes."
+author: "MigrationGuard contributors"
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  paths:
+    description: "Space-separated SQL files or directories to scan."
+    required: false
+    default: "."
+  fail-on:
+    description: "Severity that fails the build (INFO|LOW|MEDIUM|HIGH|CRITICAL)."
+    required: false
+    default: "HIGH"
+  format:
+    description: "Output format: text | json | sarif | github (annotations)."
+    required: false
+    default: "github"
+  large-tables:
+    description: "Comma-separated high-traffic tables; locking ops on them escalate."
+    required: false
+    default: ""
+  disable:
+    description: "Comma-separated rule IDs to skip (e.g. MG001,MG003)."
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install MigrationGuard
+      shell: bash
+      run: pip install "$GITHUB_ACTION_PATH"
+
+    - name: Run MigrationGuard
+      shell: bash
+      run: |
+        args=(${{ inputs.paths }} --format "${{ inputs.format }}" --fail-on "${{ inputs.fail-on }}")
+        [ -n "${{ inputs.large-tables }}" ] && args+=(--large-tables "${{ inputs.large-tables }}")
+        [ -n "${{ inputs.disable }}" ] && args+=(--disable "${{ inputs.disable }}")
+        migration-guard analyze "${args[@]}"
