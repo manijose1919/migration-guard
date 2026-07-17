@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "migration-guard"
+version = "0.1.0"
+description = "Static safety analyzer for SQL database migrations — catch locking & breaking changes before they hit production."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "MigrationGuard contributors" }]
+keywords = ["database", "migration", "postgres", "ci", "static-analysis", "devops"]
+dependencies = [
+    "sqlparse>=0.5.0",
+    "pydantic>=2.7",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.urls]
+Homepage = "https://github.com/manijose1919/migration-guard"
+Issues = "https://github.com/manijose1919/migration-guard/issues"
+
+[project.scripts]
+migration-guard = "migration_guard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --cov=migration_guard --cov-report=term-missing"
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

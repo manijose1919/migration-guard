@@ -1,0 +1,31 @@
+# MigrationGuard — standalone runnable stack.
+#
+# The analyzer itself needs NO database (it is static analysis), so the default
+# service is just the API. A throwaway Postgres is provided under the optional
+# "demo" profile for teams who want a real DB to actually run migrations against
+# while integrating.
+#
+#   docker compose up            -> API only (http://localhost:8000/docs)
+#   docker compose --profile demo up  -> API + a demo Postgres
+
+services:
+  api:
+    build: .
+    image: migration-guard:latest
+    ports:
+      - "${MG_API_PORT:-8000}:8000"
+    environment:
+      MG_FAIL_ON: "${MG_FAIL_ON:-HIGH}"
+      MG_LARGE_TABLES: "${MG_LARGE_TABLES:-}"
+      MG_DISABLED_RULES: "${MG_DISABLED_RULES:-}"
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    profiles: ["demo"]
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo
+    ports:
+      - "5432:5432"
