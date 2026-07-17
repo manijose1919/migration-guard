@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Test (pytest + coverage)
+        run: pytest
+
+  self-scan:
+    name: Dogfood the gate
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Gate must PASS on a safe migration
+        run: migration-guard analyze examples/safe_migration.sql --fail-on HIGH
+
+      - name: Gate must FAIL on a dangerous migration
+        run: |
+          if migration-guard analyze examples/dangerous_migration.sql --fail-on HIGH; then
+            echo "::error::Expected the dangerous migration to fail the gate, but it passed."
+            exit 1
+          else
+            echo "Gate correctly rejected the dangerous migration."
+          fi
+
+      - name: Produce SARIF report (non-blocking)
+        run: migration-guard analyze examples/dangerous_migration.sql --format sarif --fail-on CRITICAL > migrationguard.sarif
+
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: migrationguard-sarif
+          path: migrationguard.sarif

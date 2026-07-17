@@ -88,7 +88,7 @@ from migration_guard.analyzer import Analyzer
 from migration_guard.config import Config
 
 result = Analyzer(Config(large_tables={"users", "orders"})).analyze_sql(sql_text)
-if result.max_severity >= "HIGH":
+if result.gate_failed("HIGH"):        # safe on clean input (never raises)
     raise RuntimeError(result.to_text())
 ```
 
