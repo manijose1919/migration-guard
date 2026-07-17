@@ -1,8 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from migration_guard.cli import main
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
