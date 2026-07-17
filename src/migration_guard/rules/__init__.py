@@ -17,6 +17,13 @@ from .builtin import (
     RenameColumnOrTable,
     SetNotNullOnExisting,
 )
+from .extended import (
+    AddPrimaryKey,
+    DropIndexNonConcurrent,
+    Truncate,
+    UpdateOrDeleteWithoutWhere,
+    VacuumFull,
+)
 
 _REGISTRY: list[type[Rule]] = [
     AddNotNullColumnWithoutDefault,
@@ -26,6 +33,11 @@ _REGISTRY: list[type[Rule]] = [
     AlterColumnType,
     SetNotNullOnExisting,
     AddValidatedForeignKey,
+    UpdateOrDeleteWithoutWhere,
+    Truncate,
+    DropIndexNonConcurrent,
+    AddPrimaryKey,
+    VacuumFull,
 ]
 
 
