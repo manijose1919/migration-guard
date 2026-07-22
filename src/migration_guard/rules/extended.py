@@ -62,6 +62,7 @@ class DropIndexNonConcurrent(Rule):
     dialects = frozenset({"postgres"})  # DROP INDEX CONCURRENTLY is Postgres-only
 
     _drop_index = re.compile(r"\bDROP\s+INDEX\b")
+    _fix_sub = re.compile(r"(?i)\b(DROP\s+INDEX)\b")
 
     def check(self, stmt: Statement, config: Config) -> list[Finding]:
         n = stmt.normalized
@@ -76,6 +77,9 @@ class DropIndexNonConcurrent(Rule):
                 "blocking reads and writes.",
             )
         ]
+
+    def fix(self, stmt: Statement) -> str | None:
+        return self._fix_sub.sub(r"\1 CONCURRENTLY", stmt.source, count=1)
 
 
 class AddPrimaryKey(Rule):
@@ -109,6 +113,7 @@ class VacuumFull(Rule):
     dialects = frozenset({"postgres"})  # VACUUM FULL is not MySQL syntax
 
     _vacuum_full = re.compile(r"\bVACUUM\s+FULL\b")
+    _fix_sub = re.compile(r"(?i)\bVACUUM\s+FULL\b")
 
     def check(self, stmt: Statement, config: Config) -> list[Finding]:
         if not self._vacuum_full.search(stmt.normalized):
@@ -123,3 +128,6 @@ class VacuumFull(Rule):
                 "without a long exclusive lock.",
             )
         ]
+
+    def fix(self, stmt: Statement) -> str | None:
+        return self._fix_sub.sub("VACUUM", stmt.source, count=1)

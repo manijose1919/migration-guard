@@ -49,6 +49,7 @@ class CreateIndexNonConcurrent(Rule):
     dialects = frozenset({"postgres"})  # CONCURRENTLY is Postgres-only syntax
 
     _create_index = re.compile(r"\bCREATE\s+(?:UNIQUE\s+)?INDEX\b")
+    _fix_sub = re.compile(r"(?i)\b(CREATE\s+(?:UNIQUE\s+)?INDEX)\b")
 
     def check(self, stmt: Statement, config: Config) -> list[Finding]:
         n = stmt.normalized
@@ -66,6 +67,9 @@ class CreateIndexNonConcurrent(Rule):
                 "transaction block).",
             )
         ]
+
+    def fix(self, stmt: Statement) -> str | None:
+        return self._fix_sub.sub(r"\1 CONCURRENTLY", stmt.source, count=1)
 
 
 class DropColumn(Rule):

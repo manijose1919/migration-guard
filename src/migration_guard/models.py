@@ -67,6 +67,8 @@ class Finding(BaseModel):
     line: int = Field(ge=1)
     statement_index: int = Field(ge=0)
     filename: str | None = None
+    #: A safe automatic rewrite of the statement, when the rule offers one.
+    fix: str | None = None
 
 
 class AnalysisResult(BaseModel):

@@ -24,6 +24,8 @@ class Statement:
         line: 1-based line in the source document where the action starts.
         index: 0-based position of the statement in the document.
         action: Leading keyword (ALTER, CREATE, ...), uppercased.
+        source: Exact original statement text (used for span-based autofixes).
+        start: 0-based offset of ``source`` within the source document.
     """
 
     raw: str
@@ -31,6 +33,8 @@ class Statement:
     line: int
     index: int
     action: str = field(default="")
+    source: str = field(default="")
+    start: int = field(default=0)
 
     @property
     def table(self) -> str | None:
@@ -112,6 +116,8 @@ def parse_sql(sql: str) -> list[Statement]:
                 line=line,
                 index=index,
                 action=action,
+                source=chunk,
+                start=start,
             )
         )
         index += 1

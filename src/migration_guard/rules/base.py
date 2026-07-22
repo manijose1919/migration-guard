@@ -35,6 +35,15 @@ class Rule(ABC):
         """Return zero or more findings for a single statement."""
         raise NotImplementedError
 
+    def fix(self, stmt: Statement) -> str | None:
+        """Return a safe rewritten form of ``stmt.source``, or ``None``.
+
+        Default: no automatic fix. Only rules with a correct *single-statement*
+        rewrite override this; anything needing a multi-step expand/contract or
+        a human decision must stay ``None``.
+        """
+        return None
+
     # -- helpers shared by concrete rules --------------------------------
 
     def _severity_for(self, stmt: Statement, config: Config) -> Severity:

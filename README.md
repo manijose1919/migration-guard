@@ -157,6 +157,27 @@ Several rules describe Postgres-only mechanisms (`CONCURRENTLY`, `NOT VALID`,
 those — their advice does not apply — while the universal data-loss and
 breaking-change rules keep running.
 
+## Automatic fixes
+
+Some findings have a safe, single-statement rewrite. `--fix` applies them in
+place (replacing only the exact source span, so comments and formatting are
+preserved) and then re-analyzes:
+
+```bash
+migration-guard analyze db/migrations --fix
+```
+
+| Rule | Rewrite |
+|---|---|
+| MG002 | `CREATE INDEX ...` → `CREATE INDEX CONCURRENTLY ...` |
+| MG010 | `DROP INDEX ...` → `DROP INDEX CONCURRENTLY ...` |
+| MG012 | `VACUUM FULL ...` → `VACUUM ...` |
+
+Rules whose safe path is multi-statement (add-nullable-then-backfill, `NOT VALID`
+foreign keys, expand/contract for drops/renames) deliberately offer no autofix —
+those need a human. In `json` output every finding carries a `fix` field (the
+rewrite, or `null`).
+
 ## Suppressing known-safe findings
 
 Grandfather intentional exceptions with inline comments (a directive with no rule

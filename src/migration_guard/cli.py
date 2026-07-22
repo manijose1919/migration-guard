@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 from .analyzer import Analyzer
 from .config import SUPPORTED_DIALECTS, resolve_config
@@ -55,6 +56,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Target SQL dialect (default: env MG_DIALECT or postgres).",
     )
     analyze.add_argument(
+        "--fix", action="store_true",
+        help="Rewrite file(s) in place, applying safe automatic fixes, then re-analyze.",
+    )
+    analyze.add_argument(
         "--config", default=None,
         help="Path to a .migrationguard.toml (default: auto-discover upward).",
     )
@@ -77,6 +82,19 @@ def _config_from_args(args: argparse.Namespace):
 def _run_analyze(args: argparse.Namespace) -> int:
     cfg = _config_from_args(args)
     analyzer = Analyzer(cfg)
+
+    if args.fix:
+        fixed_total = 0
+        for path in args.paths:
+            p = Path(path)
+            files = sorted(p.rglob("*.sql")) if p.is_dir() else [p]
+            try:
+                for f in files:
+                    fixed_total += analyzer.fix_file(f)
+            except (FileNotFoundError, NotADirectoryError) as err:
+                print(f"error: {err}", file=sys.stderr)
+                return 2
+        print(f"Applied {fixed_total} automatic fix(es).", file=sys.stderr)
 
     results = []
     for path in args.paths:

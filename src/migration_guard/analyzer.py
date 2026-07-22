@@ -38,10 +38,46 @@ class Analyzer:
                     if suppressions.is_suppressed(finding.rule_id, finding.line):
                         continue
                     finding.filename = filename
+                    finding.fix = rule.fix(stmt)
                     findings.append(finding)
         # Most severe first, then by source order.
         findings.sort(key=lambda f: (-f.severity.order, f.line, f.statement_index))
         return AnalysisResult(filename=filename, findings=findings)
+
+    def apply_fixes(self, sql: str) -> tuple[str, int]:
+        """Rewrite ``sql`` applying every safe automatic fix.
+
+        Only statements that a rule both *flags* and offers a fix for are
+        rewritten, and only when not suppressed. Edits replace the exact source
+        span, so untouched statements, comments, and formatting are preserved.
+        Returns the new SQL and the number of fixes applied.
+        """
+        suppressions = parse_directives(sql)
+        edits: list[tuple[int, int, str]] = []
+        for stmt in parse_sql(sql):
+            for rule in self.rules:
+                if suppressions.is_suppressed(rule.id, stmt.line):
+                    continue
+                if not rule.check(stmt, self.config):
+                    continue
+                fixed = rule.fix(stmt)
+                if fixed is not None and fixed != stmt.source:
+                    edits.append((stmt.start, stmt.start + len(stmt.source), fixed))
+                    break  # at most one fix per statement
+        new_sql = sql
+        # Apply back-to-front so earlier offsets stay valid.
+        for start, end, text in sorted(edits, reverse=True):
+            new_sql = new_sql[:start] + text + new_sql[end:]
+        return new_sql, len(edits)
+
+    def fix_file(self, path: str | Path) -> int:
+        """Apply fixes to ``path`` in place; return the number applied."""
+        p = Path(path)
+        original = p.read_text(encoding="utf-8")
+        new_sql, count = self.apply_fixes(original)
+        if count and new_sql != original:
+            p.write_text(new_sql, encoding="utf-8")
+        return count
 
     def analyze_file(self, path: str | Path) -> AnalysisResult:
         p = Path(path)
