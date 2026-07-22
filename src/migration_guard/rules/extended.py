@@ -198,3 +198,53 @@ class MysqlModifyColumn(Rule):
                 "like gh-ost / pt-online-schema-change.",
             )
         ]
+
+
+class Reindex(Rule):
+    id = "MG016"
+    name = "reindex"
+    default_severity = Severity.HIGH
+    dialects = frozenset({"postgres"})  # REINDEX is Postgres syntax
+
+    # The safe rewrite (add CONCURRENTLY, PG12+) only covers the INDEX/TABLE
+    # forms; DATABASE/SCHEMA/SYSTEM are flagged but not auto-rewritten.
+    _fix_sub = re.compile(r"(?i)\b(REINDEX\s+(?:INDEX|TABLE))\b")
+
+    def check(self, stmt: Statement, config: Config) -> list[Finding]:
+        if stmt.action != "REINDEX" or "CONCURRENTLY" in stmt.normalized:
+            return []
+        return [
+            self._finding(
+                stmt,
+                config,
+                "REINDEX rebuilds indexes under an exclusive lock, blocking "
+                "reads and writes for the whole rebuild.",
+                "Use REINDEX ... CONCURRENTLY (PostgreSQL 12+) so the rebuild "
+                "does not block traffic.",
+            )
+        ]
+
+    def fix(self, stmt: Statement) -> str | None:
+        fixed = self._fix_sub.sub(r"\1 CONCURRENTLY", stmt.source, count=1)
+        return fixed if fixed != stmt.source else None
+
+
+class LockTable(Rule):
+    id = "MG017"
+    name = "lock-table"
+    default_severity = Severity.MEDIUM
+
+    def check(self, stmt: Statement, config: Config) -> list[Finding]:
+        # Action-based: covers both LOCK TABLE (Postgres) and LOCK TABLES (MySQL).
+        if stmt.action != "LOCK":
+            return []
+        return [
+            self._finding(
+                stmt,
+                config,
+                "Explicitly locking a table in a migration blocks other sessions "
+                "for as long as the transaction runs.",
+                "Avoid manual LOCK statements; rely on the minimal locks the DDL "
+                "itself takes, and keep migration transactions short.",
+            )
+        ]

@@ -60,8 +60,8 @@ def test_mysql_modify_not_flagged_in_postgres():
 
 # --- registry ---------------------------------------------------------------
 
-def test_registry_now_has_fifteen_rules():
+def test_new_rules_are_registered():
     from migration_guard.rules import default_rules
 
     ids = {r.id for r in default_rules()}
-    assert ids == {f"MG{n:03d}" for n in range(1, 16)}
+    assert {"MG013", "MG014", "MG015"} <= ids

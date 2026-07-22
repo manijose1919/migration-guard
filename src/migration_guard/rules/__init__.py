@@ -22,7 +22,9 @@ from .extended import (
     Cluster,
     DropIndexNonConcurrent,
     DropTable,
+    LockTable,
     MysqlModifyColumn,
+    Reindex,
     Truncate,
     UpdateOrDeleteWithoutWhere,
     VacuumFull,
@@ -44,6 +46,8 @@ _REGISTRY: list[type[Rule]] = [
     DropTable,
     Cluster,
     MysqlModifyColumn,
+    Reindex,
+    LockTable,
 ]
 
 

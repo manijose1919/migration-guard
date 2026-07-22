@@ -172,6 +172,7 @@ migration-guard analyze db/migrations --fix
 | MG002 | `CREATE INDEX ...` → `CREATE INDEX CONCURRENTLY ...` |
 | MG010 | `DROP INDEX ...` → `DROP INDEX CONCURRENTLY ...` |
 | MG012 | `VACUUM FULL ...` → `VACUUM ...` |
+| MG016 | `REINDEX INDEX\|TABLE ...` → `REINDEX ... CONCURRENTLY ...` |
 
 Rules whose safe path is multi-statement (add-nullable-then-backfill, `NOT VALID`
 foreign keys, expand/contract for drops/renames) deliberately offer no autofix —

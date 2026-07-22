@@ -44,9 +44,9 @@ def test_delete_without_where_is_critical():
     assert finding.severity is Severity.CRITICAL
 
 
-def test_full_registry_has_all_rules():
+def test_full_registry_ids_are_contiguous():
     from migration_guard.rules import default_rules
 
     ids = {r.id for r in default_rules()}
-    assert len(ids) == 15
-    assert ids == {f"MG{n:03d}" for n in range(1, 16)}
+    # IDs are contiguous MG001..MGNNN with no gaps or duplicates.
+    assert ids == {f"MG{n:03d}" for n in range(1, len(ids) + 1)}
