@@ -21,8 +21,13 @@ class Analyzer:
     def __init__(self, config: Config | None = None, rules: list[Rule] | None = None):
         self.config = config or Config()
         all_rules = rules if rules is not None else default_rules()
-        # Honor the disabled-rules policy up front.
-        self.rules = [r for r in all_rules if r.id not in self.config.disabled_rules]
+        # Honor the disabled-rules policy and the target dialect up front.
+        self.rules = [
+            r
+            for r in all_rules
+            if r.id not in self.config.disabled_rules
+            and r.applies_to(self.config.dialect)
+        ]
 
     def analyze_sql(self, sql: str, filename: str | None = None) -> AnalysisResult:
         suppressions = parse_directives(sql)

@@ -13,7 +13,7 @@ import sys
 from collections.abc import Sequence
 
 from .analyzer import Analyzer
-from .config import resolve_config
+from .config import SUPPORTED_DIALECTS, resolve_config
 from .models import Severity
 from .reporting import render
 from .rules import rule_catalog
@@ -51,6 +51,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Comma-separated rule IDs to skip (e.g. MG001,MG003).",
     )
     analyze.add_argument(
+        "--dialect", choices=list(SUPPORTED_DIALECTS), default=None,
+        help="Target SQL dialect (default: env MG_DIALECT or postgres).",
+    )
+    analyze.add_argument(
         "--config", default=None,
         help="Path to a .migrationguard.toml (default: auto-discover upward).",
     )
@@ -65,6 +69,7 @@ def _config_from_args(args: argparse.Namespace):
         "fail_on": Severity.coerce(args.fail_on) if args.fail_on else None,
         "large_tables": args.large_tables,
         "disabled_rules": args.disable,
+        "dialect": args.dialect,
     }
     return resolve_config(config_path=args.config, overrides=overrides)
 

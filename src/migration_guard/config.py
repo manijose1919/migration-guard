@@ -21,6 +21,12 @@ from .models import Severity
 
 CONFIG_FILENAME = ".migrationguard.toml"
 
+#: SQL dialects the analyzer understands. The dialect selects which rules run:
+#: Postgres-mechanism rules (CONCURRENTLY, NOT VALID, VACUUM FULL) are skipped
+#: for MySQL, where that advice would be wrong.
+SUPPORTED_DIALECTS = ("postgres", "mysql")
+DEFAULT_DIALECT = "postgres"
+
 
 def _split_csv(value: str | None) -> set[str]:
     if not value:
@@ -37,16 +43,24 @@ class Config:
         large_tables: Tables treated as high-traffic; locking ops on them
             are escalated one severity level.
         disabled_rules: Rule IDs to skip entirely.
+        dialect: Target SQL dialect; selects which rules apply.
     """
 
     fail_on: Severity = Severity.HIGH
     large_tables: set[str] = field(default_factory=set)
     disabled_rules: set[str] = field(default_factory=set)
+    dialect: str = DEFAULT_DIALECT
 
     def __post_init__(self) -> None:
         # Normalize for case-insensitive table matching.
         self.large_tables = {t.lower() for t in self.large_tables}
         self.fail_on = Severity.coerce(self.fail_on)
+        self.dialect = self.dialect.lower()
+        if self.dialect not in SUPPORTED_DIALECTS:
+            raise ValueError(
+                f"unknown dialect {self.dialect!r}; "
+                f"choose one of {', '.join(SUPPORTED_DIALECTS)}"
+            )
 
     def is_large(self, table: str | None) -> bool:
         return bool(table) and table.lower() in self.large_tables
@@ -58,6 +72,7 @@ class Config:
             fail_on=Severity.coerce(src.get("MG_FAIL_ON", "HIGH")),
             large_tables=_split_csv(src.get("MG_LARGE_TABLES")),
             disabled_rules=_split_csv(src.get("MG_DISABLED_RULES")),
+            dialect=src.get("MG_DIALECT", DEFAULT_DIALECT),
         )
 
 
@@ -89,6 +104,8 @@ def _dict_from_toml(path: Path) -> dict[str, Any]:
         out["large_tables"] = set(section["large_tables"])
     if "disabled_rules" in section:
         out["disabled_rules"] = set(section["disabled_rules"])
+    if "dialect" in section:
+        out["dialect"] = section["dialect"]
     return out
 
 
@@ -100,6 +117,8 @@ def _dict_from_env(env: dict[str, str]) -> dict[str, Any]:
         out["large_tables"] = _split_csv(env["MG_LARGE_TABLES"])
     if env.get("MG_DISABLED_RULES"):
         out["disabled_rules"] = _split_csv(env["MG_DISABLED_RULES"])
+    if env.get("MG_DIALECT"):
+        out["dialect"] = env["MG_DIALECT"]
     return out
 
 

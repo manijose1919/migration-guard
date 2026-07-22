@@ -46,6 +46,7 @@ class CreateIndexNonConcurrent(Rule):
     id = "MG002"
     name = "create-index-non-concurrent"
     default_severity = Severity.HIGH
+    dialects = frozenset({"postgres"})  # CONCURRENTLY is Postgres-only syntax
 
     _create_index = re.compile(r"\bCREATE\s+(?:UNIQUE\s+)?INDEX\b")
 
@@ -138,6 +139,7 @@ class SetNotNullOnExisting(Rule):
     id = "MG006"
     name = "set-not-null-on-existing"
     default_severity = Severity.HIGH
+    dialects = frozenset({"postgres"})  # CHECK ... NOT VALID trick is Postgres-only
 
     _set_not_null = re.compile(r"\bALTER\s+(?:COLUMN\s+)?[A-Z0-9_\"]+\s+SET\s+NOT\s+NULL\b")
 
@@ -161,6 +163,7 @@ class AddValidatedForeignKey(Rule):
     id = "MG007"
     name = "add-validated-foreign-key"
     default_severity = Severity.HIGH
+    dialects = frozenset({"postgres"})  # ADD CONSTRAINT ... NOT VALID is Postgres-only
 
     _add_fk = re.compile(r"\bADD\s+(?:CONSTRAINT\b.*)?FOREIGN\s+KEY\b")
     _references = re.compile(r"\bREFERENCES\b")

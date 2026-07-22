@@ -147,7 +147,15 @@ override the committed policy when needed. See
 fail_on = "HIGH"
 large_tables = ["users", "orders"]
 disabled_rules = ["MG010"]
+dialect = "postgres"   # or "mysql"
 ```
+
+### Dialect
+
+Several rules describe Postgres-only mechanisms (`CONCURRENTLY`, `NOT VALID`,
+`VACUUM FULL`). Pass `--dialect mysql` (or `MG_DIALECT`/the config key) to skip
+those — their advice does not apply — while the universal data-loss and
+breaking-change rules keep running.
 
 ## Suppressing known-safe findings
 

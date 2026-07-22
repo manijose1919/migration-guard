@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from ..config import Config
+from ..config import SUPPORTED_DIALECTS, Config
 from ..models import Finding, Severity
 from ..parser import Statement
 
@@ -23,6 +23,12 @@ class Rule(ABC):
     name: str
     #: Severity used when the config does not escalate.
     default_severity: Severity
+    #: Dialects this rule applies to. Defaults to every supported dialect;
+    #: rules whose advice is dialect-specific narrow this (e.g. Postgres-only).
+    dialects: frozenset[str] = frozenset(SUPPORTED_DIALECTS)
+
+    def applies_to(self, dialect: str) -> bool:
+        return dialect in self.dialects
 
     @abstractmethod
     def check(self, stmt: Statement, config: Config) -> list[Finding]:

@@ -59,6 +59,7 @@ class DropIndexNonConcurrent(Rule):
     id = "MG010"
     name = "drop-index-non-concurrent"
     default_severity = Severity.MEDIUM
+    dialects = frozenset({"postgres"})  # DROP INDEX CONCURRENTLY is Postgres-only
 
     _drop_index = re.compile(r"\bDROP\s+INDEX\b")
 
@@ -81,6 +82,7 @@ class AddPrimaryKey(Rule):
     id = "MG011"
     name = "add-primary-key"
     default_severity = Severity.HIGH
+    dialects = frozenset({"postgres"})  # advice uses CREATE UNIQUE INDEX CONCURRENTLY
 
     _add_pk = re.compile(r"\bADD\s+(?:CONSTRAINT\b.*)?PRIMARY\s+KEY\b")
 
@@ -104,6 +106,7 @@ class VacuumFull(Rule):
     id = "MG012"
     name = "vacuum-full"
     default_severity = Severity.HIGH
+    dialects = frozenset({"postgres"})  # VACUUM FULL is not MySQL syntax
 
     _vacuum_full = re.compile(r"\bVACUUM\s+FULL\b")
 
