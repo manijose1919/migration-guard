@@ -38,14 +38,21 @@ class Statement:
         return extract_table(self.normalized)
 
 
-def _mask_literals(sql: str) -> str:
-    """Blank out the *contents* of single-quoted string literals.
+# Exact token types whose *contents* are data, not SQL syntax, and so must be
+# blanked before rules run. Both are matched by identity (``is``), not hierarchy:
+#   - String.Single  -> single-quoted literals  'reset WHERE stale'
+#   - Literal (bare) -> Postgres dollar-quoting  $$ ... $$ / $tag$ ... $tag$
+# Deliberately excluded: String.Symbol (double-quoted identifiers "users") and
+# Literal.Number (numbers) are children of Literal but must be preserved.
+_LITERAL_TTYPES = (T.String.Single, T.Literal)
 
-    Rules match on SQL syntax, not on data. A keyword that appears only inside a
-    quoted string (``SET note = 'reset WHERE stale'``) must neither trigger nor
-    suppress a rule, so each string literal collapses to an empty ``''``. Only
-    ``String.Single`` is masked — double-quoted identifiers (``"users"``) are
-    ``String.Symbol`` and must be preserved for table-name extraction.
+
+def _mask_literals(sql: str) -> str:
+    """Blank out the *contents* of string literals so rules match syntax only.
+
+    A keyword that appears only inside a quoted string
+    (``SET note = 'reset WHERE stale'`` or a ``$$ ... $$`` body) must neither
+    trigger nor suppress a rule, so each literal collapses to an empty ``''``.
     """
     parsed = sqlparse.parse(sql)
     if not parsed:
@@ -53,7 +60,7 @@ def _mask_literals(sql: str) -> str:
     out: list[str] = []
     for statement in parsed:
         for token in statement.flatten():
-            out.append("''" if token.ttype is T.String.Single else token.value)
+            out.append("''" if token.ttype in _LITERAL_TTYPES else token.value)
     return "".join(out)
 
 

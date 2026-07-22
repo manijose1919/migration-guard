@@ -37,6 +37,18 @@ def test_false_positive_insert_not_flagged_for_ddl_inside_a_string():
     assert "MG001" not in _ids(sql)
 
 
+def test_dollar_quoted_body_is_masked_in_normalized():
+    # Postgres dollar-quoting ($$...$$ / $tag$...$tag$) is common in DO blocks and
+    # function bodies. Its contents are data too and must not leak into normalized.
+    stmts = parse_sql("INSERT INTO t VALUES ($$reset WHERE stale$$);")
+    assert "STALE" not in stmts[0].normalized
+
+
+def test_false_positive_insert_not_flagged_for_dollar_quoted_ddl():
+    sql = "INSERT INTO audit (msg) VALUES ($$ALTER TABLE users ADD COLUMN age int NOT NULL$$);"
+    assert "MG001" not in _ids(sql)
+
+
 def test_double_quoted_identifiers_are_preserved():
     # Quoted identifiers are String.Symbol, not String.Single -- masking them
     # would erase the table/column names the rules need. MG005 must still fire.
