@@ -27,10 +27,8 @@ def test_findings_sorted_most_severe_first():
 
 
 def test_filename_is_attached_to_findings():
-    result = Analyzer().analyze_sql("DROP TABLE t;", filename="m.sql")
-    # DROP TABLE isn't one of our column rules, so assert on a known dangerous op:
     result = Analyzer().analyze_sql("CREATE INDEX i ON t (c);", filename="m.sql")
-    assert all(f.filename == "m.sql" for f in result.findings)
+    assert result.findings and all(f.filename == "m.sql" for f in result.findings)
 
 
 def test_analyze_path_on_directory(tmp_path):

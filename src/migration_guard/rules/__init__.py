@@ -19,7 +19,10 @@ from .builtin import (
 )
 from .extended import (
     AddPrimaryKey,
+    Cluster,
     DropIndexNonConcurrent,
+    DropTable,
+    MysqlModifyColumn,
     Truncate,
     UpdateOrDeleteWithoutWhere,
     VacuumFull,
@@ -38,6 +41,9 @@ _REGISTRY: list[type[Rule]] = [
     DropIndexNonConcurrent,
     AddPrimaryKey,
     VacuumFull,
+    DropTable,
+    Cluster,
+    MysqlModifyColumn,
 ]
 
 

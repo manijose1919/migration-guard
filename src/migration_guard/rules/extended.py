@@ -131,3 +131,70 @@ class VacuumFull(Rule):
 
     def fix(self, stmt: Statement) -> str | None:
         return self._fix_sub.sub("VACUUM", stmt.source, count=1)
+
+
+class DropTable(Rule):
+    id = "MG013"
+    name = "drop-table"
+    default_severity = Severity.HIGH
+
+    _drop_table = re.compile(r"\bDROP\s+TABLE\b")
+
+    def check(self, stmt: Statement, config: Config) -> list[Finding]:
+        if not self._drop_table.search(stmt.normalized):
+            return []
+        return [
+            self._finding(
+                stmt,
+                config,
+                "Dropping a table permanently deletes its data and breaks any "
+                "deployed code still using it.",
+                "Follow expand/contract: stop all readers/writers first and take "
+                "a backup, then drop the table in a later migration.",
+            )
+        ]
+
+
+class Cluster(Rule):
+    id = "MG014"
+    name = "cluster"
+    default_severity = Severity.HIGH
+    dialects = frozenset({"postgres"})  # CLUSTER is Postgres syntax
+
+    def check(self, stmt: Statement, config: Config) -> list[Finding]:
+        # Action-based so an identifier containing "cluster" cannot trip it.
+        if stmt.action != "CLUSTER":
+            return []
+        return [
+            self._finding(
+                stmt,
+                config,
+                "CLUSTER rewrites the whole table while holding an ACCESS "
+                "EXCLUSIVE lock for the entire operation.",
+                "Avoid CLUSTER on a live table; use pg_repack to reorder rows "
+                "without a long exclusive lock.",
+            )
+        ]
+
+
+class MysqlModifyColumn(Rule):
+    id = "MG015"
+    name = "mysql-modify-column"
+    default_severity = Severity.HIGH
+    dialects = frozenset({"mysql"})  # MODIFY/CHANGE COLUMN is MySQL syntax
+
+    _modify = re.compile(r"\bALTER\s+TABLE\b.*\b(?:MODIFY|CHANGE)\s+(?:COLUMN\s+)?")
+
+    def check(self, stmt: Statement, config: Config) -> list[Finding]:
+        if not self._modify.search(stmt.normalized):
+            return []
+        return [
+            self._finding(
+                stmt,
+                config,
+                "MODIFY/CHANGE COLUMN can rewrite the table and lock it, "
+                "depending on the change and storage engine.",
+                "Use an online-DDL path (ALGORITHM=INPLACE, LOCK=NONE) or a tool "
+                "like gh-ost / pt-online-schema-change.",
+            )
+        ]
