@@ -169,7 +169,7 @@ CREATE INDEX idx ON users (email);
 src/migration_guard/
   models.py      # Severity, Finding, AnalysisResult (pydantic)
   config.py      # env-driven policy (fail-on, large tables, disabled rules)
-  parser.py      # SQL text -> normalized statements
+  parser.py      # SQL text -> normalized statements (string literals masked)
   rules/         # one file per rule, auto-registered
   analyzer.py    # orchestrates parse + rules -> AnalysisResult
   reporting.py   # text / json / sarif renderers

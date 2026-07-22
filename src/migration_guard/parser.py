@@ -11,6 +11,7 @@ import re
 from dataclasses import dataclass, field
 
 import sqlparse
+from sqlparse import tokens as T
 
 
 @dataclass
@@ -37,8 +38,27 @@ class Statement:
         return extract_table(self.normalized)
 
 
+def _mask_literals(sql: str) -> str:
+    """Blank out the *contents* of single-quoted string literals.
+
+    Rules match on SQL syntax, not on data. A keyword that appears only inside a
+    quoted string (``SET note = 'reset WHERE stale'``) must neither trigger nor
+    suppress a rule, so each string literal collapses to an empty ``''``. Only
+    ``String.Single`` is masked — double-quoted identifiers (``"users"``) are
+    ``String.Symbol`` and must be preserved for table-name extraction.
+    """
+    parsed = sqlparse.parse(sql)
+    if not parsed:
+        return sql
+    out: list[str] = []
+    for statement in parsed:
+        for token in statement.flatten():
+            out.append("''" if token.ttype is T.String.Single else token.value)
+    return "".join(out)
+
+
 def _normalize(text: str) -> str:
-    return " ".join(text.upper().split())
+    return " ".join(_mask_literals(text).upper().split())
 
 
 def _first_word(text: str) -> str:
