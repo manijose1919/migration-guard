@@ -53,7 +53,30 @@ _SARIF_LEVEL = {
 
 
 def render_text(results: Iterable[AnalysisResult]) -> str:
-    return "\n".join(r.to_text() for r in results)
+    results = list(results)
+    body = "\n".join(r.to_text() for r in results)
+    if len(results) <= 1:
+        return body
+    return body + "\n" + _aggregate_summary(results)
+
+
+def _aggregate_summary(results: list[AnalysisResult]) -> str:
+    """A roll-up footer across a multi-file scan."""
+    counts: dict[str, int] = {}
+    files_with = 0
+    for r in results:
+        if r.findings:
+            files_with += 1
+        for f in r.findings:
+            counts[f.severity.value] = counts.get(f.severity.value, 0) + 1
+    total = sum(counts.values())
+    header = f"Scanned {len(results)} files, {files_with} with findings."
+    if not total:
+        return f"{header}\n0 findings.\n"
+    # Severity labels ordered most-severe first.
+    ordered = sorted(counts.items(), key=lambda kv: -Severity.coerce(kv[0]).order)
+    breakdown = ", ".join(f"{n} {sev}" for sev, n in ordered)
+    return f"{header}\n{total} findings ({breakdown}).\n"
 
 
 def render_json(results: Iterable[AnalysisResult]) -> str:
