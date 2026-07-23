@@ -8,11 +8,11 @@ lives here.
 from __future__ import annotations
 
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from . import __version__
 from .analyzer import Analyzer
-from .config import Config
+from .config import SUPPORTED_DIALECTS, Config
 from .models import Finding, Severity
 from .rules import rule_catalog
 
@@ -29,6 +29,17 @@ class AnalyzeRequest(BaseModel):
     fail_on: Severity = Field(Severity.HIGH, description="Gate threshold.")
     large_tables: list[str] = Field(default_factory=list)
     disabled_rules: list[str] = Field(default_factory=list)
+    dialect: str = Field("postgres", description="Target SQL dialect.")
+
+    @field_validator("dialect")
+    @classmethod
+    def _known_dialect(cls, value: str) -> str:
+        normalized = value.lower()
+        if normalized not in SUPPORTED_DIALECTS:
+            raise ValueError(
+                f"unknown dialect {value!r}; choose one of {', '.join(SUPPORTED_DIALECTS)}"
+            )
+        return normalized
 
 
 class AnalyzeResponse(BaseModel):
@@ -55,6 +66,7 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
         fail_on=req.fail_on,
         large_tables=set(req.large_tables),
         disabled_rules=set(req.disabled_rules),
+        dialect=req.dialect,
     )
     result = Analyzer(config).analyze_sql(req.sql, filename=req.filename)
     return AnalyzeResponse(

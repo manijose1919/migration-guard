@@ -60,3 +60,25 @@ def test_analyze_large_table_escalation():
 def test_analyze_rejects_invalid_severity():
     resp = client.post("/analyze", json={"sql": "SELECT 1;", "fail_on": "BOGUS"})
     assert resp.status_code == 422  # pydantic validation error
+
+
+def test_analyze_defaults_to_postgres_and_flags_concurrently():
+    resp = client.post("/analyze", json={"sql": "CREATE INDEX i ON users (email);"})
+    body = resp.json()
+    assert body["findings"][0]["rule_id"] == "MG002"
+
+
+def test_analyze_respects_mysql_dialect():
+    # MG002 is postgres-only; under mysql the same SQL is clean.
+    resp = client.post(
+        "/analyze",
+        json={"sql": "CREATE INDEX i ON users (email);", "dialect": "mysql"},
+    )
+    body = resp.json()
+    assert body["gate_failed"] is False
+    assert body["findings"] == []
+
+
+def test_analyze_rejects_invalid_dialect():
+    resp = client.post("/analyze", json={"sql": "SELECT 1;", "dialect": "oracle"})
+    assert resp.status_code == 422
