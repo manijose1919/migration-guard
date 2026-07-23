@@ -56,10 +56,18 @@ def default_rules() -> list[Rule]:
     return [cls() for cls in _REGISTRY]
 
 
-def rule_catalog() -> list[dict[str, str]]:
+def rule_catalog() -> list[dict]:
     """Metadata for every rule (for docs / an API ``/rules`` endpoint)."""
     return [
-        {"id": cls.id, "name": cls.name, "default_severity": cls.default_severity.value}
+        {
+            "id": cls.id,
+            "name": cls.name,
+            "default_severity": cls.default_severity.value,
+            "summary": cls.summary,
+            "dialects": sorted(cls.dialects),
+            # A rule is fixable when it overrides the base no-op ``fix``.
+            "fixable": cls.fix is not Rule.fix,
+        }
         for cls in _REGISTRY
     ]
 

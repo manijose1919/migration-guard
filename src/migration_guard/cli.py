@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -70,7 +71,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to a .migrationguard.toml (default: auto-discover upward).",
     )
 
-    sub.add_parser("rules", help="List the available safety rules.")
+    rules_parser = sub.add_parser("rules", help="List the available safety rules.")
+    rules_parser.add_argument(
+        "-f", "--format", choices=["text", "json"], default="text",
+        help="Output format for the rule catalog (default: text).",
+    )
     return parser
 
 
@@ -149,9 +154,18 @@ def _run_analyze(args: argparse.Namespace) -> int:
     return 1 if gate_failed else 0
 
 
-def _run_rules() -> int:
-    for rule in rule_catalog():
-        print(f"{rule['id']}  {rule['default_severity']:<8} {rule['name']}")
+def _run_rules(fmt: str = "text") -> int:
+    catalog = rule_catalog()
+    if fmt == "json":
+        print(json.dumps(catalog, indent=2))
+        return 0
+    for rule in catalog:
+        dialects = ",".join(rule["dialects"])
+        fixable = " (fixable)" if rule["fixable"] else ""
+        print(
+            f"{rule['id']}  {rule['default_severity']:<8} {rule['name']:<28} "
+            f"[{dialects}]{fixable}"
+        )
     return 0
 
 
@@ -160,7 +174,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "analyze":
         return _run_analyze(args)
     if args.command == "rules":
-        return _run_rules()
+        return _run_rules(args.format)
     return 2  # pragma: no cover - argparse enforces a valid command
 
 

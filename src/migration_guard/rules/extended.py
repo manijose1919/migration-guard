@@ -16,6 +16,7 @@ from .base import Rule
 
 class UpdateOrDeleteWithoutWhere(Rule):
     id = "MG008"
+    summary = "UPDATE or DELETE without a WHERE clause affects every row in the table."
     name = "update-or-delete-without-where"
     default_severity = Severity.CRITICAL
 
@@ -38,6 +39,7 @@ class UpdateOrDeleteWithoutWhere(Rule):
 
 class Truncate(Rule):
     id = "MG009"
+    summary = "TRUNCATE irreversibly removes all rows and takes an exclusive lock."
     name = "truncate"
     default_severity = Severity.HIGH
 
@@ -57,6 +59,7 @@ class Truncate(Rule):
 
 class DropIndexNonConcurrent(Rule):
     id = "MG010"
+    summary = "DROP INDEX without CONCURRENTLY takes an exclusive lock on the table."
     name = "drop-index-non-concurrent"
     default_severity = Severity.MEDIUM
     dialects = frozenset({"postgres"})  # DROP INDEX CONCURRENTLY is Postgres-only
@@ -84,6 +87,7 @@ class DropIndexNonConcurrent(Rule):
 
 class AddPrimaryKey(Rule):
     id = "MG011"
+    summary = "ADD PRIMARY KEY builds a unique index and sets NOT NULL under an exclusive lock."
     name = "add-primary-key"
     default_severity = Severity.HIGH
     dialects = frozenset({"postgres"})  # advice uses CREATE UNIQUE INDEX CONCURRENTLY
@@ -108,6 +112,7 @@ class AddPrimaryKey(Rule):
 
 class VacuumFull(Rule):
     id = "MG012"
+    summary = "VACUUM FULL rewrites the entire table while holding an exclusive lock throughout."
     name = "vacuum-full"
     default_severity = Severity.HIGH
     dialects = frozenset({"postgres"})  # VACUUM FULL is not MySQL syntax
@@ -135,6 +140,7 @@ class VacuumFull(Rule):
 
 class DropTable(Rule):
     id = "MG013"
+    summary = "Dropping a table permanently deletes its data and breaks code still using it."
     name = "drop-table"
     default_severity = Severity.HIGH
 
@@ -157,6 +163,7 @@ class DropTable(Rule):
 
 class Cluster(Rule):
     id = "MG014"
+    summary = "CLUSTER rewrites the whole table under an ACCESS EXCLUSIVE lock."
     name = "cluster"
     default_severity = Severity.HIGH
     dialects = frozenset({"postgres"})  # CLUSTER is Postgres syntax
@@ -179,6 +186,7 @@ class Cluster(Rule):
 
 class MysqlModifyColumn(Rule):
     id = "MG015"
+    summary = "MODIFY/CHANGE COLUMN can rewrite and lock the table depending on change and engine."
     name = "mysql-modify-column"
     default_severity = Severity.HIGH
     dialects = frozenset({"mysql"})  # MODIFY/CHANGE COLUMN is MySQL syntax
@@ -202,6 +210,7 @@ class MysqlModifyColumn(Rule):
 
 class Reindex(Rule):
     id = "MG016"
+    summary = "REINDEX without CONCURRENTLY rebuilds indexes under an exclusive lock."
     name = "reindex"
     default_severity = Severity.HIGH
     dialects = frozenset({"postgres"})  # REINDEX is Postgres syntax
@@ -231,6 +240,7 @@ class Reindex(Rule):
 
 class LockTable(Rule):
     id = "MG017"
+    summary = "Explicitly locking a table blocks other sessions for the whole transaction."
     name = "lock-table"
     default_severity = Severity.MEDIUM
 

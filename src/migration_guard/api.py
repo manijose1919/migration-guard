@@ -56,7 +56,7 @@ def health() -> dict[str, str]:
 
 
 @app.get("/rules")
-def rules() -> list[dict[str, str]]:
+def rules() -> list[dict]:
     return rule_catalog()
 
 

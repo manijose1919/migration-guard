@@ -23,6 +23,8 @@ class Rule(ABC):
     name: str
     #: Severity used when the config does not escalate.
     default_severity: Severity
+    #: One-line rationale for docs / the rule catalog.
+    summary: str = ""
     #: Dialects this rule applies to. Defaults to every supported dialect;
     #: rules whose advice is dialect-specific narrow this (e.g. Postgres-only).
     dialects: frozenset[str] = frozenset(SUPPORTED_DIALECTS)

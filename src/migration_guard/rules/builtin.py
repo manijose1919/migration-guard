@@ -19,6 +19,7 @@ from .base import Rule
 
 class AddNotNullColumnWithoutDefault(Rule):
     id = "MG001"
+    summary = "Adding a NOT NULL column without a default rewrites the whole table under a lock."
     name = "add-not-null-column-without-default"
     default_severity = Severity.HIGH
 
@@ -44,6 +45,7 @@ class AddNotNullColumnWithoutDefault(Rule):
 
 class CreateIndexNonConcurrent(Rule):
     id = "MG002"
+    summary = "CREATE INDEX without CONCURRENTLY blocks writes to the table for the entire build."
     name = "create-index-non-concurrent"
     default_severity = Severity.HIGH
     dialects = frozenset({"postgres"})  # CONCURRENTLY is Postgres-only syntax
@@ -74,6 +76,7 @@ class CreateIndexNonConcurrent(Rule):
 
 class DropColumn(Rule):
     id = "MG003"
+    summary = "Dropping a column is a breaking change for deployed code still reading it."
     name = "drop-column"
     default_severity = Severity.MEDIUM
 
@@ -96,6 +99,7 @@ class DropColumn(Rule):
 
 class RenameColumnOrTable(Rule):
     id = "MG004"
+    summary = "Renaming a column or table breaks running code that uses the old name mid-deploy."
     name = "rename-column-or-table"
     default_severity = Severity.MEDIUM
 
@@ -118,6 +122,7 @@ class RenameColumnOrTable(Rule):
 
 class AlterColumnType(Rule):
     id = "MG005"
+    summary = "Changing a column type generally rewrites the table under an exclusive lock."
     name = "alter-column-type"
     default_severity = Severity.HIGH
 
@@ -141,6 +146,7 @@ class AlterColumnType(Rule):
 
 class SetNotNullOnExisting(Rule):
     id = "MG006"
+    summary = "SET NOT NULL scans the whole table under an exclusive lock to validate rows."
     name = "set-not-null-on-existing"
     default_severity = Severity.HIGH
     dialects = frozenset({"postgres"})  # CHECK ... NOT VALID trick is Postgres-only
@@ -165,6 +171,7 @@ class SetNotNullOnExisting(Rule):
 
 class AddValidatedForeignKey(Rule):
     id = "MG007"
+    summary = "Adding a validated foreign key scans every existing row while locking both tables."
     name = "add-validated-foreign-key"
     default_severity = Severity.HIGH
     dialects = frozenset({"postgres"})  # ADD CONSTRAINT ... NOT VALID is Postgres-only
