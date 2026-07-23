@@ -84,8 +84,7 @@ framework dependencies**, so it drops into any pipeline.
 **1. As a library**
 
 ```python
-from migration_guard.analyzer import Analyzer
-from migration_guard.config import Config
+from migration_guard import Analyzer, Config
 
 result = Analyzer(Config(large_tables={"users", "orders"})).analyze_sql(sql_text)
 if result.gate_failed("HIGH"):        # safe on clean input (never raises)
