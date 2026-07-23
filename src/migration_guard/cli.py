@@ -18,7 +18,7 @@ from pathlib import Path
 from .analyzer import Analyzer
 from .config import SUPPORTED_DIALECTS, resolve_config
 from .models import Severity
-from .reporting import render
+from .reporting import render, render_rules_markdown
 from .rules import rule_catalog
 
 _SEVERITY_CHOICES = [s.value for s in Severity]
@@ -73,7 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     rules_parser = sub.add_parser("rules", help="List the available safety rules.")
     rules_parser.add_argument(
-        "-f", "--format", choices=["text", "json"], default="text",
+        "-f", "--format", choices=["text", "json", "markdown"], default="text",
         help="Output format for the rule catalog (default: text).",
     )
     return parser
@@ -158,6 +158,9 @@ def _run_rules(fmt: str = "text") -> int:
     catalog = rule_catalog()
     if fmt == "json":
         print(json.dumps(catalog, indent=2))
+        return 0
+    if fmt == "markdown":
+        print(render_rules_markdown(catalog), end="")
         return 0
     for rule in catalog:
         dialects = ",".join(rule["dialects"])

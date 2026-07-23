@@ -115,7 +115,9 @@ The `--format github` output emits `::error`/`::warning` workflow commands, and 
 non-zero = a finding met the `--fail-on` threshold.
 
 The rule registry is the extension point: implement one `Rule` class, register it, and
-every surface (CLI/API/CI) picks it up automatically — no core changes.
+every surface (CLI/API/CI) picks it up automatically — no core changes. The full rule
+reference lives in [`RULES.md`](RULES.md) (generated from the catalog:
+`migration-guard rules --format markdown`), also served at `GET /rules`.
 
 ---
 
