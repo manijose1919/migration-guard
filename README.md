@@ -167,6 +167,14 @@ preserved) and then re-analyzes:
 migration-guard analyze db/migrations --fix
 ```
 
+Preview first with `--diff` — it prints a unified diff of exactly what `--fix`
+would change, writes nothing, and exits non-zero when a fix is pending (so CI
+can require migrations be pre-fixed):
+
+```bash
+migration-guard analyze db/migrations --diff
+```
+
 | Rule | Rewrite |
 |---|---|
 | MG002 | `CREATE INDEX ...` → `CREATE INDEX CONCURRENTLY ...` |

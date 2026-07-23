@@ -9,6 +9,7 @@ The exit code is the contract that makes this usable as a CI gate:
 from __future__ import annotations
 
 import argparse
+import difflib
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -55,9 +56,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--dialect", choices=list(SUPPORTED_DIALECTS), default=None,
         help="Target SQL dialect (default: env MG_DIALECT or postgres).",
     )
-    analyze.add_argument(
+    fix_mode = analyze.add_mutually_exclusive_group()
+    fix_mode.add_argument(
         "--fix", action="store_true",
         help="Rewrite file(s) in place, applying safe automatic fixes, then re-analyze.",
+    )
+    fix_mode.add_argument(
+        "--diff", action="store_true",
+        help="Preview autofixes as a unified diff without writing; exit 1 if any fix is pending.",
     )
     analyze.add_argument(
         "--config", default=None,
@@ -79,17 +85,48 @@ def _config_from_args(args: argparse.Namespace):
     return resolve_config(config_path=args.config, overrides=overrides)
 
 
+def _sql_files(path: str) -> list[Path]:
+    """Every ``.sql`` file under ``path`` (or the file itself)."""
+    p = Path(path)
+    return sorted(p.rglob("*.sql")) if p.is_dir() else [p]
+
+
+def _run_diff(analyzer: Analyzer, paths: Sequence[str]) -> int:
+    """Print a unified diff of pending autofixes; write nothing. Exit 1 if any."""
+    changed = False
+    for path in paths:
+        for f in _sql_files(path):
+            try:
+                original = f.read_text(encoding="utf-8")
+            except (FileNotFoundError, NotADirectoryError) as err:
+                print(f"error: {err}", file=sys.stderr)
+                return 2
+            new_sql, count = analyzer.apply_fixes(original)
+            if count and new_sql != original:
+                changed = True
+                sys.stdout.writelines(
+                    difflib.unified_diff(
+                        original.splitlines(keepends=True),
+                        new_sql.splitlines(keepends=True),
+                        fromfile=str(f),
+                        tofile=f"{f} (fixed)",
+                    )
+                )
+    return 1 if changed else 0
+
+
 def _run_analyze(args: argparse.Namespace) -> int:
     cfg = _config_from_args(args)
     analyzer = Analyzer(cfg)
 
+    if args.diff:
+        return _run_diff(analyzer, args.paths)
+
     if args.fix:
         fixed_total = 0
         for path in args.paths:
-            p = Path(path)
-            files = sorted(p.rglob("*.sql")) if p.is_dir() else [p]
             try:
-                for f in files:
+                for f in _sql_files(path):
                     fixed_total += analyzer.fix_file(f)
             except (FileNotFoundError, NotADirectoryError) as err:
                 print(f"error: {err}", file=sys.stderr)
