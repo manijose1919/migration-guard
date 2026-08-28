@@ -6,7 +6,7 @@
 # while integrating.
 #
 #   docker compose up            -> API only (http://localhost:8000/docs)
-#   docker compose --profile demo up  -> API + a demo Postgres
+#   docker compose --profile demo up  -> API + a demo Postgres (bound to localhost)
 
 services:
   api:
@@ -28,4 +28,4 @@ services:
       POSTGRES_PASSWORD: demo
       POSTGRES_DB: demo
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"

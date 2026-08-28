@@ -82,3 +82,8 @@ def test_analyze_respects_mysql_dialect():
 def test_analyze_rejects_invalid_dialect():
     resp = client.post("/analyze", json={"sql": "SELECT 1;", "dialect": "oracle"})
     assert resp.status_code == 422
+
+
+def test_analyze_rejects_oversized_sql():
+    resp = client.post("/analyze", json={"sql": "SELECT 1;" + " " * 1_000_001})
+    assert resp.status_code == 422
