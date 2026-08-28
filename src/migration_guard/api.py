@@ -24,7 +24,11 @@ app = FastAPI(
 
 
 class AnalyzeRequest(BaseModel):
-    sql: str = Field(..., description="Raw SQL migration text to analyze.")
+    sql: str = Field(
+        ...,
+        description="Raw SQL migration text to analyze.",
+        max_length=1_000_000,
+    )
     filename: str | None = Field(None, description="Optional name for reporting.")
     fail_on: Severity = Field(Severity.HIGH, description="Gate threshold.")
     large_tables: list[str] = Field(default_factory=list)
